@@ -13,7 +13,7 @@ public:
   }
 
   inline bool at(uint32_t i) {
-    return array[i >> 2] & (1 << (i & 7));
+    return array[i >> 3] & (1 << (i & 7));
   }
 
   inline void set(uint32_t i, bool value) {
