@@ -82,6 +82,40 @@ private:
     }
   }
 
+  inline void encryptRound(uint8_t *array, uint32_t size) {
+    BitField bits(array);
+    generatePBoxes(size << 3);
+    
+    for (uint32_t i = 0; i < size; i++) {
+      array[i] = sBoxEncrypt[array[i]];
+    }
+
+    // apply the fisher yates shuffle on the bit level to distribute the ciphertext into more sboxes
+    /*
+    "A P-box is a permutation of all the bits: it takes the outputs of all the S-boxes of one round, permutes the bits, and feeds them into the S-boxes of the next round. A good P-box has the property that the output bits of any S-box are distributed to as many S-box inputs as possible."
+    */
+    for (int32_t i = 0; i < size << 3; i++) {
+      uint8_t temp = bits.at(pBox[i]);
+      bits.set(pBox[i], bits.at(i));
+      bits.set(i, temp);
+    }
+  }
+
+  inline void decryptRound(uint8_t *array, uint32_t size) {
+    BitField bits(array);
+    generatePBoxes(size << 3);
+    
+    for (int32_t i = (size << 3) - 1; i >= 0; i--) {
+      uint8_t temp = bits.at(pBox[i]);
+      bits.set(pBox[i], bits.at(i));
+      bits.set(i, temp);
+    }
+
+    for (uint32_t i = 0; i < size; i++) {
+      array[i] = sBoxDecrypt[array[i]];
+    }
+  }
+
 public:
   Cipher(int32_t seed) {
     this->seed = seed;
@@ -95,40 +129,14 @@ public:
   }
 
   inline void encrypt(uint8_t *array, uint32_t size) {
-    BitField bits(array);
-    generatePBoxes(size << 3);
-
     for (uint32_t i = 0; i < ROUNDS; i++) {
-      for (uint32_t i = 0; i < size; i++) {
-        array[i] = sBoxEncrypt[array[i]];
-      }
-
-      // apply the fisher yates shuffle on the bit level to distribute the ciphertext into more sboxes
-      /*
-      "A P-box is a permutation of all the bits: it takes the outputs of all the S-boxes of one round, permutes the bits, and feeds them into the S-boxes of the next round. A good P-box has the property that the output bits of any S-box are distributed to as many S-box inputs as possible."
-      */
-      for (int32_t i = 0; i < size << 3; i++) {
-        uint8_t temp = bits.at(pBox[i]);
-        bits.set(pBox[i], bits.at(i));
-        bits.set(i, temp);
-      }
+      encryptRound(array, size);
     }
   }
 
   inline void decrypt(uint8_t *array, uint32_t size) {
-    BitField bits(array);
-    generatePBoxes(size << 3);
-
     for (uint32_t i = 0; i < ROUNDS; i++) {
-      for (int32_t i = (size << 3) - 1; i >= 0; i--) {
-        uint8_t temp = bits.at(pBox[i]);
-        bits.set(pBox[i], bits.at(i));
-        bits.set(i, temp);
-      }
-
-      for (uint32_t i = 0; i < size; i++) {
-        array[i] = sBoxDecrypt[array[i]];
-      }
+      decryptRound(array, size);
     }
   }
 };
