@@ -1,7 +1,7 @@
 # [SP-Network](https://en.wikipedia.org/wiki/Substitution%E2%80%93permutation_network)
 
 ## status:
-NOT FINISHED
+NOT CRYPTOGRAPHICALLY SECURE
 
 ## usage:
 ```cpp

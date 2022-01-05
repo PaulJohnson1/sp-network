@@ -5,11 +5,9 @@
 class BitField {
 public:
   uint8_t *array;
-  uint32_t length;
 
-  BitField(uint8_t *array, uint32_t length) {
+  BitField(uint8_t *array) {
     this->array = array;
-    this->length = length;
   }
 
   inline bool at(uint32_t i) {
@@ -34,7 +32,7 @@ public:
   }
 
   inline uint32_t next() {
-    seed = (seed * 934487 + 1123) % 2147483647;
+    seed = ((int64_t)seed * 934487 + 1123) % 2147483647;
 
     return seed;
   }
@@ -45,8 +43,7 @@ private:
   int32_t seed;
   uint8_t *sBoxEncrypt;
   uint8_t *sBoxDecrypt;
-  uint32_t *pBoxEncrypt;
-  uint32_t *pBoxDecrypt;
+  uint32_t *pBox;
 
   inline void generateSBoxes() {
     sBoxEncrypt = new uint8_t[256];
@@ -70,21 +67,17 @@ private:
   }
 
   inline void generatePBoxes(uint32_t size) {
-    pBoxEncrypt = new uint32_t[size];
+    pBox = new uint32_t[size];
     for (int32_t i = 0; i < size; i++) {
-      pBoxEncrypt[i] = i;
+      pBox[i] = i;
     }
 
     PRNG shufflePrng(seed);
     for (uint32_t i = 0; i < size; i++) {
       uint32_t index = shufflePrng.next() % size;
-      uint32_t temp = pBoxEncrypt[i];
-      pBoxEncrypt[i] = pBoxEncrypt[index];
-      pBoxEncrypt[index] = temp;
-    }
-
-    for (int32_t i = 0; i < size; i++) {
-      pBoxDecrypt[pBoxEncrypt[i]] = i;
+      uint32_t temp = pBox[i];
+      pBox[i] = pBox[index];
+      pBox[index] = temp;
     }
   }
 
@@ -97,28 +90,49 @@ public:
   ~Cipher() {
     delete[] sBoxEncrypt;
     delete[] sBoxDecrypt;
+    delete[] pBox;
   }
 
   inline void encrypt(uint8_t *array, uint32_t size) {
-    BitField bits(array, size);
+    BitField bits(array);
 
     for (uint32_t i = 0; i < size; i++) {
       array[i] = sBoxEncrypt[array[i]];
+    }
+
+    generatePBoxes(size << 3);
+
+    // apply the fisher yates shuffle on the bit level to distribute the ciphertext into more sboxes
+    /*
+    "A P-box is a permutation of all the bits: it takes the outputs of all the S-boxes of one round, permutes the bits, and feeds them into the S-boxes of the next round. A good P-box has the property that the output bits of any S-box are distributed to as many S-box inputs as possible."
+    */
+    for (int32_t i = 0; i < size << 3; i++) {
+      uint8_t temp = bits.at(pBox[i]);
+      bits.set(pBox[i], bits.at(i));
+      bits.set(i, temp);
     }
   }
 
   inline void decrypt(uint8_t *array, uint32_t size) {
-    BitField bits(array, size);
+    BitField bits(array);
+    generatePBoxes(size << 3);
+
+    for (int32_t i = (size << 3) - 1; i >= 0; i--) {
+      uint8_t temp = bits.at(pBox[i]);
+      bits.set(pBox[i], bits.at(i));
+      bits.set(i, temp);
+    }
 
     for (uint32_t i = 0; i < size; i++) {
-      array[i] = sBoxEncrypt[array[i]];
+      array[i] = sBoxDecrypt[array[i]];
     }
+
   }
 };
 
 int main() {
   Cipher thing(133);
-  uint8_t arraylol[10] = {1, 2, 3, 4, 5, 6, 7, 8, 8, 9};
+  uint8_t arraylol[10] = {1,2,3,4,5,6,7,8,9,10};
   for (int32_t i = 0; i < 10; i++) {
     std::cout << std::to_string(arraylol[i]) << " ";
   }
