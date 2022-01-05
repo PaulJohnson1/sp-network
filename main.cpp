@@ -128,38 +128,41 @@ public:
     delete[] pBox;
   }
 
-  inline void encrypt(uint8_t *array, uint32_t size) {
+  inline void encrypt(uint8_t *plaintext, uint32_t size, uint8_t *ciphertext) {
+    std::copy(plaintext, plaintext + size, ciphertext);
     for (uint32_t i = 0; i < ROUNDS; i++) {
-      encryptRound(array, size);
+      encryptRound(ciphertext, size);
     }
   }
 
-  inline void decrypt(uint8_t *array, uint32_t size) {
+  inline void decrypt(uint8_t *ciphertext, uint32_t size, uint8_t *plaintext) {
+    std::copy(ciphertext, ciphertext + size, plaintext);
     for (uint32_t i = 0; i < ROUNDS; i++) {
-      decryptRound(array, size);
+      decryptRound(plaintext, size);
     }
   }
 };
 
 int main() {
-  Cipher thing(133);
-  uint8_t arraylol[10] = {1,2,3,4,5,6,7,8,9,10};
+  Cipher encryption(133);
+  uint8_t plaintext[10] = {1,2,3,4,5,6,7,8,9,10};
+  uint8_t ciphertext[10];
   for (int32_t i = 0; i < 10; i++) {
-    std::cout << std::to_string(arraylol[i]) << " ";
+    std::cout << std::to_string(plaintext[i]) << " ";
   }
   std::cout << std::endl;
 
-  thing.encrypt(arraylol, 10);
+  encryption.encrypt(plaintext, 10, ciphertext);
 
   for (int32_t i = 0; i < 10; i++) {
-    std::cout << std::to_string(arraylol[i]) << " ";
+    std::cout << std::to_string(ciphertext[i]) << " ";
   }
   std::cout << std::endl;
 
-  thing.decrypt(arraylol, 10);
+  encryption.decrypt(ciphertext, 10, plaintext);
 
   for (int32_t i = 0; i < 10; i++) {
-    std::cout << std::to_string(arraylol[i]) << " ";
+    std::cout << std::to_string(plaintext[i]) << " ";
   }
   std::cout << std::endl;
 } 
