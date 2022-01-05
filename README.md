@@ -3,6 +3,9 @@
 ## status:
 slow but secure
 
+## properties:
+confusion and diffusion
+
 ## usage:
 ```cpp
   Cipher cipher(133);
