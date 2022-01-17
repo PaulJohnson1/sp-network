@@ -99,6 +99,8 @@ private:
       bits.set(pBox[i], bits.at(i));
       bits.set(i, temp);
     }
+
+    delete[] pBox;
   }
 
   inline void decryptRound(uint8_t *array, uint32_t size) {
@@ -114,18 +116,18 @@ private:
     for (uint32_t i = 0; i < size; i++) {
       array[i] = sBoxDecrypt[array[i]];
     }
+    delete[] pBox;
   }
 
 public:
-  Cipher(int32_t seed) {
+  inline Cipher(int32_t seed) {
     this->seed = seed;
     generateSBoxes();
   }
 
-  ~Cipher() {
+  inline ~Cipher() {
     delete[] sBoxEncrypt;
     delete[] sBoxDecrypt;
-    delete[] pBox;
   }
 
   inline void encrypt(uint8_t *plaintext, uint32_t size, uint8_t *ciphertext) {
